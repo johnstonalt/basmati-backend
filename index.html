@@ -22,10 +22,7 @@
 
         <script>
             async function doTheShit() {
-                var ipres = await fetch("https://raw.githubusercontent.com/johnstonalt/ip-updates/refs/heads/main/README.md", { cache: "no-store" } );
-                var ip = await ipres.text();
-                ip = ip.replace("# ", "");
-                console.log(ip);
+                var ip = window.location.href.replace("http://", "").replace(":3000/", "");
                 var ipdiv = document.querySelector("#ipdiv");
                 ipdiv.innerText = ip;
 
