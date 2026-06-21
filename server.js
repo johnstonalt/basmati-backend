@@ -18,7 +18,7 @@ app.get("/ok", (req, res) => { res.send("ok"); });
 const mcsip = "127.0.0.1"
 const mcsport = 25565
 
-app.get("/players", (req, res) => {
+app.get("/api/players", (req, res) => {
     console.log(`request to '/players' from ${req.ip}`)
     mcp.ping({ mcsip, mcsport }, (err, mcres) => {
         if (err) { return res.json({"error": "server down" }); }

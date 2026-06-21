@@ -27,7 +27,7 @@
                 ipdiv.innerText = ip;
 
                 // mc data
-                var mcres = await fetch(`/players`, { cache: "no-store" });
+                var mcres = await fetch(`/api/players`, { cache: "no-store" });
                 var mcdata = await mcres.json();
 
                 var countdiv = document.querySelector("#countdiv");
