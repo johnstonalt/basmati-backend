@@ -60,17 +60,37 @@ app.get("/api/stats", (req, res) => {
         deaths = data["stats"]["minecraft:custom"]["minecraft:deaths"];
         if (!deaths) deaths = 0;
 
-        var playtime = 0;
-        playtime = data["stats"]["minecraft:custom"]["minecraft:play_time"] / 20 / 60 / 60;
+        var playtime = data["stats"]["minecraft:custom"]["minecraft:play_time"] / 20 / 60 / 60;
         playtime = Math.round(playtime * 10) / 10;
 
-        var distance = 0;
-        distance = data["stats"]["minecraft:custom"]["minecraft:walk_one_cm"] / 100;
+        var distance = data["stats"]["minecraft:custom"]["minecraft:walk_one_cm"] / 100;
         distance = Math.round(distance);
 
-        var crouchedDistance = 0;
-        crouchedDistance = data["stats"]["minecraft:custom"]["minecraft:crouch_one_cm"] / 100;
+        var crouchedDistance = data["stats"]["minecraft:custom"]["minecraft:crouch_one_cm"] / 100;
         crouchedDistance = Math.round(crouchedDistance);
+
+        var damageBlockedByShield = data["stats"]["minecraft:custom"]["minecraft:damage_blocked_by_shield"];
+
+        var totalMined = 0;
+        var mined = Object.values(data["stats"]["minecraft:mined"]);
+        for (var i = 0; i < mined.length; i++) totalMined += mined[i];
+
+        var totalKilled = 0;
+        var killed = Object.values(data["stats"]["minecraft:killed"]);
+        for (var i = 0 ; i < killed.length; i++) totalKilled += killed[i];
+
+        var damageDealt = data["stats"]["minecraft:custom"]["minecraft:damage_dealt"];
+        var damageTaken = data["stats"]["minecraft:custom"]["minecraft:damage_taken"];
+
+        var jumps = data["stats"]["minecraft:custom"]["minecraft:jump"];
+
+        var sleeps = 0;
+        sleeps = data["stats"]["minecraft:custom"]["minecraft:sleep_in_bed"]
+        if (!sleeps) sleeps = 0;
+
+        var totalPickedUp = 0;
+        var picked = Object.values(data["stats"]["minecraft:picked_up"]);
+        for (var i = 0; i < picked.length; i++) totalPickedUp += picked[i];
 
         // console.log(`${username}'s deaths: ${deaths}; playtime: ${playtime}; ${distance}; crouched: ${crouchedDistance}`);
   
@@ -78,8 +98,16 @@ app.get("/api/stats", (req, res) => {
             "username": username,
             "deaths": deaths,
             "playtime": `${playtime} hours`,
-            "distance walked": `${distance} blocks`,
-            "distanced walked while crouched": `${crouchedDistance} blocks`
+            "distance walked": `${Number(distance).toLocaleString()} blocks`,
+            "distanced walked while crouched": `${Number(crouchedDistance).toLocaleString()} blocks`,
+            "mobs killed": Number(totalKilled).toLocaleString(),
+            "damage blocked by shield": Number(damageBlockedByShield).toLocaleString(),
+            "blocked mined": Number(totalMined).toLocaleString(),
+            "damage dealt": Number(damageDealt).toLocaleString(),
+            "damage taken": Number(damageTaken).toLocaleString(),
+            "jumps jumped": Number(jumps).toLocaleString(),
+            "sleeps": Number(sleeps).toLocaleString(),
+            "items picked up": Number(totalPickedUp).toLocaleString(),
         }); 
     });    
 

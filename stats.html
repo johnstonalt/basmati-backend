@@ -15,10 +15,6 @@
 <form>
         <label>sort by:</label>
         <select id="sortform" onChange="sortChanged(this.form)" style="font-size: 0.8em;">
-            <option value="username">player name</option>
-            <option value="deaths">deaths</option>
-            <option value="playtime">playtime</option>
-            <option value="distance walked">blocks walked</option>
         </select>
 </form>
         <br />
@@ -27,11 +23,18 @@
 
         <script>
             var sortkey = "username";
-            var rawData;
+            var data;
 
             async function getStats() {
                 var res = await fetch("/api/stats"); 
                 data = await res.json();
+
+                var sortform = document.querySelector("#sortform");
+
+                var entries = Object.entries(data[0]);
+                for (var i = 0; i < entries.length; i++) {
+                    sortform.innerHTML += `<option value="${entries[i][0]}">${entries[i][0]}</option>`;
+                }
 
                 showStats();
             }
@@ -42,8 +45,8 @@
                 sorted.sort(function (a, b) { 
                     if (sortkey == "username") { return a[sortkey] > b[sortkey]; }
                
-                    var na = Number(String(a[sortkey]).replace(" blocks", "").replace(" hours", ""));
-                    var nb = Number(String(b[sortkey]).replace(" blocks", "").replace(" hours", ""));
+                    var na = Number(String(a[sortkey]).replace(" blocks", "").replace(" hours", "").replace(",", ""));
+                    var nb = Number(String(b[sortkey]).replace(" blocks", "").replace(" hours", "").replace(",", ""));
                     return na < nb;
                 });
 
@@ -55,8 +58,12 @@
                         <div style="font-weight: bold; font-size: 1.2em;">${sorted[i]["username"]}</div>`
 
                     var entries = Object.entries(sorted[i]);
+    
                     for (var j = 1; j < entries.length; j++) {
-                        formatted += `<div>${entries[j][0]}: ${entries[j][1]}</div>`;
+                        if (entries[j][0] == sortkey)
+                            formatted += `<div style="font-weight: bold;">${entries[j][0]}: ${entries[j][1]}</div>`;
+                        else
+                            formatted += `<div>${entries[j][0]}: ${entries[j][1]}</div>`;
                     }
 
                     formatted += "<br /><br /> </div>";
