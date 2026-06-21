@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+    <head>
+        <title>basmati stats</title>
+
+        <style>
+               body, html { padding: 0; margin: 0; background: whitesmoke; color: #404040; font-family: sans-serif; }
+        </style>
+    </head>
+    <body>
+        <br /> <br />
+        <div style="font-size: 2em; width: 70%; margin: auto;">
+            <div style="font-weight: bold; font-size: 2.7em; text-align: center;">stats</div>
+        
+        <br /> <br />
+<form>
+        <label>sort by:</label>
+        <select id="sortform" onChange="sortChanged(this.form)" style="font-size: 0.8em;">
+            <option value="username">player name</option>
+            <option value="deaths">deaths</option>
+            <option value="playtime">playtime</option>
+            <option value="distance walked">blocks walked</option>
+        </select>
+</form>
+        <br />
+            <div id="stats" style="font-size: 0.9em;">loading...</div> 
+        </div>
+
+        <script>
+            var sortkey = "username";
+            var rawData;
+
+            async function getStats() {
+                var res = await fetch("/api/stats"); 
+                data = await res.json();
+
+                showStats();
+            }
+
+            // absolute cinema.
+            function showStats() {
+                var sorted = data;
+                sorted.sort(function (a, b) { 
+                    if (sortkey == "username") { return a[sortkey] > b[sortkey]; }
+               
+                    var na = Number(String(a[sortkey]).replace(" blocks", "").replace(" hours", ""));
+                    var nb = Number(String(b[sortkey]).replace(" blocks", "").replace(" hours", ""));
+                    return na < nb;
+                });
+
+                var statsel = document.querySelector("#stats");
+                statsel.innerHTML = "";
+                for (var i = 0; i < sorted.length; i++) {
+                    var formatted = `
+                    <div> 
+                        <div style="font-weight: bold; font-size: 1.2em;">${sorted[i]["username"]}</div>`
+
+                    var entries = Object.entries(sorted[i]);
+                    for (var j = 1; j < entries.length; j++) {
+                        formatted += `<div>${entries[j][0]}: ${entries[j][1]}</div>`;
+                    }
+
+                    formatted += "<br /><br /> </div>";
+                    statsel.innerHTML += formatted;
+                }
+            } 
+           
+            function sortChanged(el) {
+                var sortform = document.querySelector("#sortform");
+                sortkey = sortform.options[sortform.selectedIndex].value;
+                console.log(sortkey); 
+
+                showStats();
+            } 
+
+            getStats();
+        </script>
+    </body>
+</html>
