@@ -1,23 +1,24 @@
 const express = require("express");
 const cors = require("cors");
 const nocache = require("nocache");
-const mcp = require("minecraft-protocol");
 const path = require("path");
 const fs = require("fs");
 const helmet = require("helmet");
+const ratelimit = require("express-rate-limit");
 const app = express();
 const port = 3000;
 
+// security
+const limiter = ratelimit({
+	windowMs: 1*1000,
+	max: 7
+});
+
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            upgradeInsecureRequests: null,
-        },
-    }
+    contentSecurityPolicy: false
 }));
+app.use(limiter);
+
 app.use(cors());
 app.use(nocache());
 
@@ -37,16 +38,46 @@ app.use((req, res, next) => {
 
 // players
 const mcsip = "127.0.0.1"
-const mcsport = 25565
+const mcsport = 25607
 const serverDir = "/home/john/basmati";
 const usercache = JSON.parse(fs.readFileSync(`${serverDir}/usercache.json`, "utf8"));
 
 app.get("/api/players", (req, res) => {
+	/*
     mcp.ping({ mcsip, mcsport }, (err, mcres) => {
         if (err) { return res.json({"error": "server down" }); }
 
         res.json(mcres);
-    });
+    });*/
+
+	
+	var players = new Set();
+	var latestlog = fs.readFileSync(`${serverDir}/logs/latest.log`, "utf8").split("\n");
+	for (var i = 0; i < latestlog.length; i++) {
+		// make sure it is not a chat message
+		if (latestlog[i].includes("[Not Secure]")) continue;
+		
+		// join message
+		// [14:19:11] [Server thread/INFO]: Player [saygex] joined.
+		if (latestlog[i].includes("joined") && latestlog[i].includes("[Server thread/INFO]: Player")) {
+			// console.log(latestlog[i]);
+			var a = latestlog[i].split("[Server thread/INFO]: ")[1]
+			a = a.split("[")[1]
+			a = a.split("]")[0]
+			players.add(a);
+		}
+
+		// leave message
+		// [14:20:47] [Server thread/INFO]: saygex left the game
+		if (latestlog[i].includes("left the game") && latestlog[i].includes("[Server thread/INFO]: ")) {
+			var a = (latestlog[i].split("[Server thread/INFO]: ")[1].split(" left the game")[0]);
+			players.delete(a);
+		}
+	}	
+
+	retval = []
+	retval = Array.from(players);
+	res.json(retval); 
 });
 
 
