@@ -1,12 +1,26 @@
-const express = require("express");
-const cors = require("cors");
-const nocache = require("nocache");
-const path = require("path");
-const fs = require("fs");
-const helmet = require("helmet");
-const ratelimit = require("express-rate-limit");
+import express from "express";
+import cors from "cors";
+import nocache from "nocache";
+import path from "path";
+import fs from "fs";
+import helmet from "helmet";
+import ratelimit from "express-rate-limit";
+import { Rcon } from "rcon-client"
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import "dotenv/config"
+
+console.log(process.env.RCON_PWD)
+
 const app = express();
 const port = 3000;
+const rcon = new Rcon({
+	host: "localhost",
+	port: 25669,
+	password: "SUUUPERsecurePASSWORD?\!6969"
+});
+await rcon.connect();
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // security
 const limiter = ratelimit({
@@ -42,7 +56,7 @@ const mcsport = 25607
 const serverDir = "/home/john/basmati";
 const usercache = JSON.parse(fs.readFileSync(`${serverDir}/usercache.json`, "utf8"));
 
-app.get("/api/players", (req, res) => {
+app.get("/api/players", async (req, res) => {
 	/*
     mcp.ping({ mcsip, mcsport }, (err, mcres) => {
         if (err) { return res.json({"error": "server down" }); }
@@ -50,34 +64,17 @@ app.get("/api/players", (req, res) => {
         res.json(mcres);
     });*/
 
-	
-	var players = new Set();
-	var latestlog = fs.readFileSync(`${serverDir}/logs/latest.log`, "utf8").split("\n");
-	for (var i = 0; i < latestlog.length; i++) {
-		// make sure it is not a chat message
-		if (latestlog[i].includes("[Not Secure]")) continue;
-		
-		// join message
-		// [14:19:11] [Server thread/INFO]: Player [saygex] joined.
-		if (latestlog[i].includes("joined") && latestlog[i].includes("[Server thread/INFO]: Player")) {
-			// console.log(latestlog[i]);
-			var a = latestlog[i].split("[Server thread/INFO]: ")[1]
-			a = a.split("[")[1]
-			a = a.split("]")[0]
-			players.add(a);
-		}
+	var players = [];
+	var rconres = await rcon.send("list");
 
-		// leave message
-		// [14:20:47] [Server thread/INFO]: saygex left the game
-		if (latestlog[i].includes("left the game") && latestlog[i].includes("[Server thread/INFO]: ")) {
-			var a = (latestlog[i].split("[Server thread/INFO]: ")[1].split(" left the game")[0]);
-			players.delete(a);
-		}
-	}	
+	rconres = rconres.split("online: ")[1];
+	for (var i = 0; i < rconres.split(", "); i++) {
+		players.push(rconres.split(", ")[i]);
+	}
 
-	retval = []
-	retval = Array.from(players);
-	res.json(retval); 
+	if (players.length == 0) players.push(rconres)
+
+	res.json(players);
 });
 
 
@@ -119,15 +116,16 @@ app.get("/api/stats", (req, res) => {
         var crouchedDistance = data["stats"]["minecraft:custom"]["minecraft:crouch_one_cm"] / 100;
         crouchedDistance = Math.round(crouchedDistance);
 
-        var damageBlockedByShield = data["stats"]["minecraft:custom"]["minecraft:damage_blocked_by_shield"];
+        var damageBlockedByShield = 0
+	damageBlockedByShield = data["stats"]["minecraft:custom"]["minecraft:damage_blocked_by_shield"];
 
-        var totalMined = 0;
-        var mined = Object.values(data["stats"]["minecraft:mined"]);
-        for (var i = 0; i < mined.length; i++) totalMined += mined[i];
+        //var totalMined = 0;
+        /*try {var mined = Object.values(data["stats"]["minecraft:mined"]);
+        for (var i = 0; i < mined.length; i++) totalMined += mined[i];} finally {}*/
 
-        var totalKilled = 0;
-        var killed = Object.values(data["stats"]["minecraft:killed"]);
-        for (var i = 0 ; i < killed.length; i++) totalKilled += killed[i];
+        //var totalKilled = 0;
+        /*var killed = Object.values(data["stats"]["minecraft:killed"]);
+        for (var i = 0 ; i < killed.length; i++) totalKilled += killed[i];*/
 
         var damageDealt = data["stats"]["minecraft:custom"]["minecraft:damage_dealt"];
         var damageTaken = data["stats"]["minecraft:custom"]["minecraft:damage_taken"];
@@ -138,9 +136,9 @@ app.get("/api/stats", (req, res) => {
         sleeps = data["stats"]["minecraft:custom"]["minecraft:sleep_in_bed"]
         if (!sleeps) sleeps = 0;
 
-        var totalPickedUp = 0;
-        var picked = Object.values(data["stats"]["minecraft:picked_up"]);
-        for (var i = 0; i < picked.length; i++) totalPickedUp += picked[i];
+        //var totalPickedUp = 0;
+        /*var picked = Object.values(data["stats"]["minecraft:picked_up"]);
+        for (var i = 0; i < picked.length; i++) totalPickedUp += picked[i];*/
 
         // console.log(`${username}'s deaths: ${deaths}; playtime: ${playtime}; ${distance}; crouched: ${crouchedDistance}`);
   
@@ -150,15 +148,15 @@ app.get("/api/stats", (req, res) => {
             "playtime": `${playtime} hours`,
             "distance walked": `${Number(distance).toLocaleString()} blocks`,
             "distanced walked while crouched": `${Number(crouchedDistance).toLocaleString()} blocks`,
-            "mobs killed": Number(totalKilled).toLocaleString(),
+            //"mobs killed": Number(totalKilled).toLocaleString(),
             "damage blocked by shield": Number(damageBlockedByShield).toLocaleString(),
-            "blocked mined": Number(totalMined).toLocaleString(),
+            //"blocked mined": Number(totalMined).toLocaleString(),
             "damage dealt": Number(damageDealt).toLocaleString(),
             "damage taken": Number(damageTaken).toLocaleString(),
             "jumps jumped": Number(jumps).toLocaleString(),
             "sleeps": Number(sleeps).toLocaleString(),
-            "items picked up": Number(totalPickedUp).toLocaleString(),
-         //   "uuid": uuid,
+            //"items picked up": Number(totalPickedUp).toLocaleString(),
+            //"uuid": uuid,
         }); 
     });    
 
