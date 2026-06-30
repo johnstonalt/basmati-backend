@@ -10,8 +10,6 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import "dotenv/config"
 
-console.log(process.env.RCON_PWD)
-
 const app = express();
 const port = 3000;
 const rcon = new Rcon({
@@ -66,14 +64,19 @@ app.get("/api/players", async (req, res) => {
 
 	var players = [];
 	var rconres = await rcon.send("list");
+	var playerCount = Number(rconres.split("There are ")[1].split(" of a ")[0]);
+	if (playerCount == 0) res.json([]);
 
 	rconres = rconres.split("online: ")[1];
-	for (var i = 0; i < rconres.split(", "); i++) {
-		players.push(rconres.split(", ")[i]);
+	if (playerCount == 1) {
+		players.push(rconres);
+	} 
+
+	else {
+		for (var i = 0; i < rconres.split(", "); i++) {
+			players.push(rconres.split(", ")[i]);
+		}
 	}
-
-	if (players.length == 0) players.push(rconres)
-
 	res.json(players);
 });
 
